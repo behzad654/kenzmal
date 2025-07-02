@@ -1,0 +1,97 @@
+add_action('wp_footer', function () {
+?>
+<!-- باکس چت ساده دستیار کنز -->
+<style>
+    .chatbox {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        display: none;
+        flex-direction: column;
+        z-index: 9999;
+        overflow: hidden;
+    }
+
+    .chatbox-header {
+        background: #0084FF;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chatbox-content {
+        padding: 10px;
+        flex-grow: 1;
+        overflow-y: auto;
+        font-size: 14px;
+    }
+
+    .chatbox input {
+        width: 100%;
+        border: none;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+        box-sizing: border-box;
+    }
+
+    #chat-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #0084FF;
+        color: white;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 9998;
+        font-size: 20px;
+    }
+</style>
+
+<div id="chat-toggle">💬</div>
+
+<div class="chatbox" id="chatbox">
+    <div class="chatbox-header">
+        دستیار کنز
+        <span style="cursor:pointer;" onclick="document.getElementById('chatbox').style.display='none';document.getElementById('chat-toggle').style.display='block';">×</span>
+    </div>
+    <div class="chatbox-content" id="chat-content">
+        <div><strong>دستیار:</strong> سلام! چطور می‌تونم کمکتون کنم؟</div>
+    </div>
+    <input type="text" id="chat-input" placeholder="پیام شما..." onkeypress="if(event.key==='Enter') sendMessage()">
+</div>
+
+<script>
+    document.getElementById("chat-toggle").onclick = function () {
+        document.getElementById("chatbox").style.display = "flex";
+        document.getElementById("chat-toggle").style.display = "none";
+    };
+
+    function sendMessage() {
+        const input = document.getElementById("chat-input");
+        const content = document.getElementById("chat-content");
+        const message = input.value.trim();
+        if (message) {
+            const userMsg = document.createElement("div");
+            userMsg.innerHTML = "<strong>شما:</strong> " + message;
+            content.appendChild(userMsg);
+            input.value = "";
+            setTimeout(() => {
+                const botMsg = document.createElement("div");
+                botMsg.innerHTML = "<strong>دستیار:</strong> در حال پردازش...";
+                content.appendChild(botMsg);
+                content.scrollTop = content.scrollHeight;
+            }, 500);
+        }
+    }
+</script>
+<?php
+});
