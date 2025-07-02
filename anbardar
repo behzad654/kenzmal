@@ -1,0 +1,361 @@
+// حذف ستون کمسیون از جدول سفارشات ووکامرس (کلیدهای رایج کمسیون)
+add_filter('manage_edit-shop_order_columns', function($columns) {
+    // کلیدهای احتمالی ستون کمسیون، اگر کمسیون دارید با کلید مناسب جایگزین کنید
+    $commission_keys = ['commission', 'wcmp_commission', 'dokan_commission', 'commission_fee'];
+
+    foreach ($commission_keys as $key) {
+        if (isset($columns[$key])) {
+            unset($columns[$key]);
+        }
+    }
+
+    // اضافه کردن ستون نام فروشگاه بعد از شماره سفارش
+    $new_columns = [];
+    foreach ($columns as $key => $column) {
+        $new_columns[$key] = $column;
+        if ($key === 'order_number') {
+            $new_columns['dokan_store_name'] = 'نام فروشگاه';
+        }
+    }
+    return $new_columns;
+}, 100);
+
+// مقداردهی به ستون نام فروشگاه در جدول سفارشات
+add_action('manage_shop_order_posts_custom_column', function($column) {
+    global $post;
+
+    if ($column === 'dokan_store_name') {
+        $order = wc_get_order($post->ID);
+        $store_names = [];
+
+        foreach ($order->get_items() as $item) {
+            $product_id = $item->get_product_id();
+            $author_id = get_post_field('post_author', $product_id);
+            $store_name = get_user_meta($author_id, 'dokan_store_name', true);
+            if ($store_name && !in_array($store_name, $store_names)) {
+                $store_names[] = $store_name;
+            }
+        }
+
+        if (!empty($store_names)) {
+            echo implode(', ', array_map('esc_html', $store_names));
+        } else {
+            echo '—';
+        }
+    }
+});
+
+// استایل‌ها و اسکریپت‌ها برای کاربران خاص با UI زیباتر
+add_action('admin_head', function () {
+    $user = wp_get_current_user();
+    $target_users = ['anbardar', 'anbardar2'];
+
+    if (in_array($user->user_login, $target_users)) {
+        echo '
+        <style>
+            /* حذف المان‌های اضافی */
+            #wpadminbar, #adminmenuback, #adminmenuwrap, #dashboard_activity {
+                display: none !important;
+            }
+            .wc-order-data-tabs, .order_data_column .order_notes {
+                display: none !important;
+            }
+
+            /* تولبار شناور */
+            .floating-toolbar {
+                position: fixed;
+                bottom: 25px;
+                right: 25px;
+                z-index: 9999;
+                display: flex;
+                gap: 12px;
+                direction: rtl;
+                align-items: center;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+            .floating-toolbar a {
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                color: white;
+                padding: 12px 18px;
+                border-radius: 12px;
+                text-decoration: none;
+                font-weight: 600;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                transition: all 0.3s ease;
+                user-select: none;
+            }
+            .floating-toolbar a:hover {
+                background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+            }
+            .report-btn { background: #00a32a !important; }
+            .logout-btn { background: #d63638 !important; }
+
+            /* پنجره گزارش */
+            #report-popup {
+                display: none;
+                position: fixed;
+                top: 6%;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 95%;
+                max-width: 1100px;
+                background: #fff;
+                border-radius: 14px;
+                padding: 25px 30px 30px 30px;
+                z-index: 10000;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                max-height: 85vh;
+                overflow-y: auto;
+                direction: rtl;
+            }
+            #report-close {
+                position: absolute;
+                top: 15px;
+                left: 20px;
+                cursor: pointer;
+                font-size: 26px;
+                color: #f44336;
+                font-weight: bold;
+                transition: color 0.3s ease;
+            }
+            #report-close:hover {
+                color: #b71c1c;
+            }
+
+            /* فیلتر و دکمه جستجو */
+            #report-filter {
+                margin-bottom: 18px;
+                direction: ltr;
+                text-align: left;
+            }
+            #report-filter input {
+                width: 260px;
+                padding: 8px 14px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                font-size: 15px;
+                transition: border-color 0.3s ease;
+            }
+            #report-filter input:focus {
+                border-color: #00a32a;
+                outline: none;
+            }
+            #report-filter button {
+                padding: 9px 16px;
+                background: #1e87f0;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                margin-left: 14px;
+                font-weight: 600;
+                font-size: 15px;
+                box-shadow: 0 2px 7px rgba(30,135,240,0.6);
+                transition: background 0.3s ease;
+            }
+            #report-filter button:hover {
+                background: #0f6ab4;
+            }
+
+            /* دکمه چاپ */
+            #report-popup button.print-btn {
+                margin-bottom: 15px;
+                background: #00a32a;
+                color: #fff;
+                padding: 8px 16px;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: 600;
+                box-shadow: 0 3px 10px rgba(0,163,42,0.7);
+                transition: background 0.3s ease;
+            }
+            #report-popup button.print-btn:hover {
+                background: #007a18;
+            }
+
+            /* جدول گزارش */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 20px;
+                direction: rtl;
+                font-size: 14.5px;
+                color: #333;
+            }
+            table thead {
+                background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+                color: white;
+                font-weight: 700;
+                box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15);
+            }
+            table, th, td {
+                border: 1px solid #b5b5b5;
+            }
+            th, td {
+                padding: 10px 12px;
+                text-align: right;
+                vertical-align: middle;
+            }
+            tbody tr:nth-child(even) {
+                background: #f5faff;
+            }
+            tbody tr:hover {
+                background: #d0f0fd;
+                transition: background 0.3s ease;
+            }
+            .checkbox-cell {
+                text-align: center;
+            }
+        </style>
+        ';
+    }
+});
+
+// تولبار شناور و پنجره گزارش و جاوااسکریپت
+add_action('admin_footer', function () {
+    $user = wp_get_current_user();
+    $target_users = ['anbardar', 'anbardar2'];
+
+    if (in_array($user->user_login, $target_users)) {
+        $logout_url = wp_logout_url(home_url());
+        $orders_page_url = admin_url('edit.php?post_type=shop_order'); // صفحه سفارشات ووکامرس
+        echo '
+        <div class="floating-toolbar" role="toolbar" aria-label="ابزار سفارشات">
+            <a class="report-btn" href="#" onclick="loadReport(); return false;" aria-label="نمایش گزارش سفارشات">📊 گزارش سفارشات</a>
+            <a class="back-btn" href="' . esc_url($orders_page_url) . '" aria-label="بازگشت به سفارشات">⬅️ برگشت به سفارشات</a>
+            <a class="logout-btn" href="' . esc_url($logout_url) . '" aria-label="خروج از سایت">🚪 خروج</a>
+        </div>
+
+        <div id="report-popup" role="dialog" aria-modal="true" aria-labelledby="report-popup-title" tabindex="-1">
+            <div id="report-close" onclick="document.getElementById(\'report-popup\').style.display = \'none\';" role="button" tabindex="0" aria-label="بستن پنجره گزارش">✖️</div>
+            <h2 id="report-popup-title" style="text-align:center; margin-bottom:15px;">📋 گزارش سفارشات جدید</h2>
+            <div id="report-filter">
+                <input type="text" id="popup-store-filter" placeholder="نام فروشنده را وارد کنید" aria-label="فیلتر بر اساس نام فروشنده" />
+                <button onclick="loadReport()">🔍 جستجو</button>
+            </div>
+            <button class="print-btn" onclick="printReport()" aria-label="چاپ گزارش">🖨️ چاپ گزارش</button>
+            <div id="report-content" aria-live="polite" aria-atomic="true" style="min-height: 150px;">
+                <p>در حال بارگذاری...</p>
+            </div>
+        </div>
+
+        <script>
+        let lastOrderCheck = 0;
+
+        function loadReport() {
+            let storeName = document.getElementById("popup-store-filter").value.trim();
+
+            document.getElementById("report-popup").style.display = "block";
+
+            fetch("' . admin_url('admin-ajax.php?action=load_order_report') . '&dokan_store_name=" + encodeURIComponent(storeName))
+            .then(res => res.text())
+            .then(data => {
+                document.getElementById("report-content").innerHTML = data;
+            });
+        }
+
+        function printReport() {
+            var content = document.getElementById("report-content").innerHTML;
+            var win = window.open("", "PrintReport", "width=900,height=600");
+            win.document.write("<html><head><title>چاپ گزارش سفارشات</title>");
+            win.document.write("<style>body{font-family: \'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; direction: rtl;} table { width: 100%; border-collapse: collapse; margin-top: 20px;} table, th, td { border: 1px solid #b5b5b5; } th, td { padding: 10px 12px; text-align: right; } tbody tr:nth-child(even) { background: #f5faff; } tbody tr:hover { background: #d0f0fd; }</style>");
+            win.document.write("</head><body>");
+            win.document.write("<h2 style=\'text-align:center;\'>📋 گزارش سفارشات</h2>");
+            win.document.write(content);
+            win.document.write("</body></html>");
+            win.document.close();
+            win.focus();
+            win.print();
+            win.close();
+        }
+
+        function checkNewOrders() {
+            fetch("' . admin_url('admin-ajax.php?action=check_new_orders') . '")
+            .then(res => res.json())
+            .then(data => {
+                if (data.new_order) {
+                    if (lastOrderCheck !== data.latest_id) {
+                        lastOrderCheck = data.latest_id;
+                        loadReport();
+                    }
+                }
+            });
+        }
+
+        setInterval(checkNewOrders, 100000);
+        </script>
+        ';
+    }
+});
+
+// AJAX: بارگذاری گزارش سفارشات
+add_action('wp_ajax_load_order_report', function () {
+    if (!current_user_can('read')) {
+        wp_die('دسترسی غیرمجاز');
+    }
+
+    $input_store = isset($_GET['dokan_store_name']) ? sanitize_text_field($_GET['dokan_store_name']) : '';
+    $input_store = trim($input_store);
+
+    $args = [
+        'status' => 'processing',
+        'limit' => 20,
+        'orderby' => 'date',
+        'order' => 'DESC'
+    ];
+
+    $orders = wc_get_orders($args);
+
+    echo '<table role="table" aria-label="گزارش سفارشات"><thead><tr><th scope="col">شماره سفارش</th><th scope="col">نام محصول</th><th scope="col">نام فروشگاه</th><th scope="col">نام خریدار</th><th scope="col">تاریخ</th><th scope="col">تحویل شد</th></tr></thead><tbody>';
+
+    foreach ($orders as $order) {
+        foreach ($order->get_items() as $item) {
+            $product_name = $item->get_name();
+            $product_id = $item->get_product_id();
+            $author_id = get_post_field('post_author', $product_id);
+            $store_name = get_user_meta($author_id, 'dokan_store_name', true) ?: '---';
+
+            if ($input_store !== '') {
+                if (mb_strtolower($store_name) !== mb_strtolower($input_store)) {
+                    continue;
+                }
+            }
+
+            $customer_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+            $order_date = $order->get_date_created()->date_i18n('Y/m/d H:i');
+
+            echo '<tr>';
+            echo '<td>' . esc_html($order->get_id()) . '</td>';
+            echo '<td>' . esc_html($product_name) . '</td>';
+            echo '<td>' . esc_html($store_name) . '</td>';
+            echo '<td>' . esc_html($customer_name) . '</td>';
+            echo '<td>' . esc_html($order_date) . '</td>';
+            echo '<td class="checkbox-cell"><input type="checkbox" aria-label="تحویل شد" /></td>';
+            echo '</tr>';
+        }
+    }
+
+    echo '</tbody></table>';
+    wp_die();
+});
+
+// AJAX: بررسی سفارش جدید
+add_action('wp_ajax_check_new_orders', function () {
+    $args = [
+        'status' => 'processing',
+        'limit' => 1,
+        'orderby' => 'date',
+        'order' => 'DESC'
+    ];
+
+    $orders = wc_get_orders($args);
+    $latest = $orders ? $orders[0] : null;
+
+    wp_send_json([
+        'new_order' => $latest !== null,
+        'latest_id' => $latest ? $latest->get_id() : 0
+    ]);
+});
