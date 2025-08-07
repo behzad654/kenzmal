@@ -1,0 +1,219 @@
+// ✅ هدایت پس از ورود به داشبورد دکان برای حساب‌های hesabdar و hesabdar2
+add_filter('login_redirect', function($redirect_to, $request, $user) {
+    if ($user && in_array($user->user_login, ['hesabdar', 'hesabdar2'])) {
+        return admin_url('admin.php?page=dokan#/');
+    }
+    return $redirect_to;
+}, 10, 3);
+
+// ✅ سفارشی‌سازی دسترسی‌ها و رابط کاربری برای کاربران hesabdar و hesabdar2
+function kenzmal_customize_hesabdar_access() {
+    $user = wp_get_current_user();
+    if (!in_array($user->user_login, ['hesabdar', 'hesabdar2'])) return;
+
+    // حذف نوار بالا
+    add_filter('show_admin_bar', '__return_false');
+
+    // محدودسازی قابلیت‌ها
+    add_filter('user_has_cap', function ($allcaps, $cap, $args) use ($user) {
+        if (in_array($user->user_login, ['hesabdar', 'hesabdar2'])) {
+            $allcaps['read'] = true;
+            $allcaps['read_shop_order'] = true;
+            $allcaps['view_woocommerce_reports'] = true;
+            $allcaps['manage_woocommerce'] = true;
+
+            $allcaps['edit_shop_orders'] = false;
+            $allcaps['edit_shop_order'] = false;
+            $allcaps['edit_published_shop_orders'] = false;
+            $allcaps['edit_others_shop_orders'] = false;
+
+            $allcaps['delete_shop_orders'] = false;
+            $allcaps['delete_published_shop_orders'] = false;
+            $allcaps['delete_others_shop_orders'] = false;
+        }
+        return $allcaps;
+    }, 10, 3);
+
+    // حذف منوهای غیرمجاز
+    add_action('admin_menu', function() {
+        global $menu, $submenu;
+
+        $allowed = [
+            'edit.php?post_type=shop_order',
+            'wc-reports',
+            'dokan',
+        ];
+
+        foreach ($menu as $key => $item) {
+            if (!in_array($item[2], $allowed)) {
+                remove_menu_page($item[2]);
+            }
+        }
+
+        if (isset($submenu['dokan'])) {
+            foreach ($submenu['dokan'] as $index => $sub) {
+                if (!in_array($sub[2], ['dokan', 'dokan-withdraw'])) {
+                    unset($submenu['dokan'][$index]);
+                }
+            }
+        }
+    }, 999);
+
+    // حذف نوارها و اعلان‌ها
+    add_action('admin_head', function () {
+        echo '
+        <style>
+            #wpadminbar,
+            #adminmenuwrap,
+            #collapse-menu,
+            #screen-meta,
+            #screen-meta-links,
+            #contextual-help-wrap,
+            .contextual-help-tabs-wrap,
+            #postbox-container-1,
+            .dokan-dashboard-header,
+            .dokan-banner,
+            .dokan-dashboard-content .notice,
+            .dokan-dashboard-content .dokan-alert,
+            .dokan-dashboard-content .dokan-message {
+                display: none !important;
+            }
+            html.wp-toolbar {
+                padding-top: 0 !important;
+            }
+        </style>';
+    });
+
+    // دکمه‌های شناور
+    add_action('admin_footer', function() {
+        ?>
+        <style>
+            #kenzmal-fixed-buttons {
+                position: fixed;
+                top: 50%;
+                right: 10px;
+                transform: translateY(-50%);
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                z-index: 999999;
+            }
+            #kenzmal-fixed-buttons a {
+                padding: 12px 18px;
+                border-radius: 6px;
+                text-decoration: none;
+                font-weight: 600;
+                box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+                transition: background-color 0.3s ease;
+                white-space: nowrap;
+                font-size: 14px;
+            }
+            #kenzmal-fixed-buttons a.green {
+                background-color: #28a745;
+                color: white !important;
+            }
+            #kenzmal-fixed-buttons a.green:hover {
+                background-color: #218838;
+            }
+            #kenzmal-fixed-buttons a.red {
+                background-color: #dc3545;
+                color: white !important;
+            }
+            #kenzmal-fixed-buttons a.red:hover {
+                background-color: #c82333;
+            }
+        </style>
+        <div id="kenzmal-fixed-buttons"> 
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/'); ?>" target="_blank">داشبورد</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=wc-reports'); ?>" target="_blank">گزارش سفارشات</a>
+
+            <!-- کلیدهای جدید اضافه شده -->
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/withdraw'); ?>" target="_blank">برداشت</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/reverse-withdrawals'); ?>" target="_blank">برداشت معکوس</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/vendors'); ?>" target="_blank">فروشندگان</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/announcement'); ?>" target="_blank">اطلاعیه‌ها</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/refund'); ?>" target="_blank">عودت وجه</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/verifications'); ?>" target="_blank">تأییدیه‌ مدارک</a>
+            <a class="green" href="<?php echo admin_url('admin.php?page=dokan#/reports'); ?>" target="_blank">گزارش‌ها</a>
+
+            <a class="red" href="<?php echo wp_logout_url(home_url()); ?>">خروج</a>
+        </div>
+        <?php
+    });
+
+    // مخفی کردن دکمه‌های ویرایش و حذف در لیست و صفحه سفارش
+    $css_hide_edit_delete = '<style>
+        .row-actions .edit,
+        .row-actions .submitdelete,
+        .page-title-action[href*="trash"],
+        .bulk-delete {
+            display: none !important;
+        }
+    </style>';
+
+    add_action('admin_head-edit.php', function () use ($css_hide_edit_delete) {
+        echo $css_hide_edit_delete;
+    });
+    add_action('admin_head-post.php', function () use ($css_hide_edit_delete) {
+        echo $css_hide_edit_delete;
+    });
+}
+add_action('admin_init', 'kenzmal_customize_hesabdar_access');
+add_action('admin_head', function () {
+    $user = wp_get_current_user();
+    $target_users = ['anbardar', 'anbardar2'];
+
+    if (in_array($user->user_login, $target_users)) {
+        echo '<style>
+            #wpbody-content > div.dokan-admin-header {
+                display: none !important;
+            }
+        </style>';
+    }
+});
+add_action('admin_head', function () {
+    $current_user = wp_get_current_user();
+    
+    // اگر بخوای فقط برای کاربر خاصی مخفی بشه مثلاً 'hesabdar'
+    if ($current_user && $current_user->user_login === 'hesabdar') {
+        echo '<style>
+            #wpbody-content > div.dokan-admin-header {
+                display: none !important;
+            }
+        </style>';
+    }
+
+    // یا اگر برای همه کاربران می‌خوای مخفی بشه:
+    /*
+    echo '<style>
+        #wpbody-content > div.dokan-admin-header {
+            display: none !important;
+        }
+    </style>';
+    */
+});
+add_action('admin_head', function () {
+    $current_user = wp_get_current_user();
+    if ($current_user && $current_user->user_login === 'hesabdar') {
+        echo '<style>
+            #message.error.inline {
+                display: none !important;
+            }
+        </style>';
+    }
+});
+add_action('admin_head', function () {
+    echo '<style>
+        #woocommerce-embedded-root .woocommerce-layout__header h1 {
+            display: none !important;
+        }
+    </style>';
+});
+add_action('admin_head', function () {
+    echo '<style>
+        #woocommerce-embedded-root .woocommerce-layout__header > div {
+            display: none !important;
+        }
+    </style>';
+});
+
