@@ -1,0 +1,68 @@
+add_action('admin_head', function () {
+    $current_user = wp_get_current_user();
+    if ($current_user && in_array($current_user->user_login, ['hesabdar', 'hesabdar2'])) {
+        echo '<style>
+            /* پنهان‌سازی نوتیفیکیشن‌های دکان */
+            .dokan-upgrade-notice,
+            .notice.is-dismissible.dokan-notice,
+
+            /* پنهان‌سازی هدر دکان */
+            #wpbody-content > div.dokan-admin-header > div,
+            #wpbody-content > div.dokan-admin-header > div > div.dokan-admin-logo-wrap > div.dokan-version-tags,
+            #wpbody-content > div.dokan-admin-header > div > div.dokan-admin-logo-wrap > div.dokan-admin-header-logo,
+            #wpbody-content > div.dokan-admin-header > div > div.dokan-admin-logo-wrap > div.dokan-admin-header-logo > img,
+
+            /* پنهان‌سازی ویجت دوم داشبورد */
+            #vue-backend-app > div.dokan-dashboard > div.widgets-wrapper > div.left-side > div:nth-child(2),
+            #vue-backend-app > div.dokan-dashboard > div.widgets-wrapper > div.left-side > div:nth-child(2) > div.postbox-header > h2,
+            #vue-backend-app > div.dokan-dashboard > div.widgets-wrapper > div.left-side > div:nth-child(2) > div.inside,
+
+            /* پنهان‌سازی پیام‌ها و تب فعالیت */
+            #message > p,
+            #activity-panel-tab-activity {
+                display: none !important;
+            }
+
+            .kenzmal-panel img {
+                max-width: 120px;
+                display: block;
+                margin: 10px auto;
+            }
+
+            .kenzmal-panel .date-today {
+                font-size: 18px;
+                margin-top: 10px;
+            }
+        </style>';
+    }
+});
+
+add_action('admin_notices', function () {
+    $current_user = wp_get_current_user();
+    if ($current_user && in_array($current_user->user_login, ['hesabdar', 'hesabdar2'])) {
+        echo '<style>
+            .kenzmal-panel {
+                font-size: 24px;
+                font-weight: bold;
+                background: #ff5722;
+                color: white;
+                padding: 25px;
+                border-radius: 12px;
+                text-align: center;
+                animation: blink 10s infinite;
+                box-shadow: 0 0 10px #ff5722;
+                margin-top: 20px;
+            }
+            @keyframes blink {
+                0% { opacity: 1; }
+                50% { opacity: 0.4; }
+                100% { opacity: 1; }
+            }
+        </style>
+        <div class="kenzmal-panel">
+            📊 شما در پنل حسابداری هستید - لطفاً فقط به بخش سفارشات و گزارشات دسترسی داشته باشید.
+            <img src="https://kenzmal.ir/wp-content/uploads/2023/07/logokenzfinal.png" alt="Kenz Logo" />
+            <div class="date-today">' . date_i18n('Y/m/d') . '</div>
+        </div>';
+    }
+});
