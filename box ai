@@ -1,0 +1,134 @@
+
+add_action('wp_footer', function () {
+?>
+<!-- باکس چت دستیار کنز با حباب خوش‌آمد -->
+<style>
+    .chatbox {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 420px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: none;
+        flex-direction: column;
+        z-index: 9999;
+        overflow: hidden;
+        font-family: sans-serif;
+    }
+
+    .chatbox-header {
+        background: #0084FF;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .chatbox-avatar-container {
+        position: relative;
+        text-align: center;
+        background: #f9f9f9;
+    }
+
+    .chatbox-bubble {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: #ffffff;
+        border: 2px solid #f13c3c;
+        color: #333;
+        padding: 10px 12px;
+        border-radius: 15px;
+        font-size: 14px;
+        max-width: 80%;
+        text-align: right;
+        z-index: 10;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .kanz-avatar {
+        width: 100%;
+        max-height: 120px;
+        object-fit: contain;
+        z-index: 1;
+    }
+
+    .chatbox-content {
+        padding: 10px;
+        flex-grow: 1;
+        overflow-y: auto;
+        font-size: 14px;
+    }
+
+    .chatbox input {
+        width: 100%;
+        border: none;
+        padding: 10px;
+        border-top: 1px solid #ddd;
+        box-sizing: border-box;
+    }
+
+    #chat-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #0084FF;
+        color: white;
+        padding: 12px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 9998;
+        font-size: 20px;
+    }
+</style>
+
+<div id="chat-toggle">💬</div>
+
+<div class="chatbox" id="chatbox">
+    <div class="chatbox-header">
+        دستیار کنز
+        <span style="cursor:pointer;" onclick="document.getElementById('chatbox').style.display='none';document.getElementById('chat-toggle').style.display='block';">×</span>
+    </div>
+
+    <div class="chatbox-avatar-container">
+        <div class="chatbox-bubble">سلام، من کنز هستم! چطور می‌تونم کمکتون کنم؟ 😊</div>
+        <img class="kanz-avatar" src="https://kenzmal.ir/wp-content/uploads/2025/07/kanz_clearer_animation.gif" alt="دستیار کنز" />
+    </div>
+
+    <div class="chatbox-content" id="chat-content">
+        <!-- گفتگو اینجا اضافه میشه -->
+    </div>
+    <input type="text" id="chat-input" placeholder="پیام شما..." onkeypress="if(event.key==='Enter') sendMessage()">
+</div>
+
+<script>
+    document.getElementById("chat-toggle").onclick = function () {
+        document.getElementById("chatbox").style.display = "flex";
+        document.getElementById("chat-toggle").style.display = "none";
+    };
+
+    function sendMessage() {
+        const input = document.getElementById("chat-input");
+        const content = document.getElementById("chat-content");
+        const message = input.value.trim();
+        if (message) {
+            const userMsg = document.createElement("div");
+            userMsg.innerHTML = "<strong>شما:</strong> " + message;
+            content.appendChild(userMsg);
+            input.value = "";
+            setTimeout(() => {
+                const botMsg = document.createElement("div");
+                botMsg.innerHTML = "<strong>دستیار:</strong> در حال پردازش...";
+                content.appendChild(botMsg);
+                content.scrollTop = content.scrollHeight;
+            }, 500);
+        }
+    }
+</script>
+<?php
+});
