@@ -1,0 +1,123 @@
+add_action('admin_footer', function () {
+    $current_screen = get_current_screen();
+    $current_user = wp_get_current_user();
+
+    if ($current_screen && $current_screen->id === 'edit-shop_order' && in_array($current_user->user_login, ['anbardar', 'anbardar2'])) {
+        ?>
+        <style>
+            @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css');
+
+            .kenzmal-banner-fixed {
+                position: fixed;
+                top: 32px;
+                left: 0;
+                right: 0;
+                z-index: 9999;
+                background: #ff5722;
+                color: white;
+                padding: 15px 30px;
+                font-family: 'Vazir', sans-serif;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 4px 12px rgba(255, 87, 34, 0.6);
+                font-size: 18px;
+                border-radius: 0 0 16px 16px;
+                user-select: none;
+            }
+
+            .kenzmal-banner-fixed .logo img {
+                height: 50px;
+                width: auto;
+                border-radius: 0;
+                box-shadow: none;
+                vertical-align: middle;
+            }
+
+            .kenzmal-banner-fixed .center-text {
+                font-size: 20px;
+                font-weight: 700;
+                flex: 1;
+                text-align: center;
+                padding: 0 20px;
+            }
+
+            .kenzmal-banner-fixed .datetime {
+                font-size: 14px;
+                font-weight: 600;
+                font-family: 'Vazir', Tahoma, Geneva, Verdana, sans-serif;
+                white-space: nowrap;
+                direction: ltr;
+                min-width: 170px;
+                text-align: right;
+            }
+
+            #wpcontent {
+                margin-top: 85px !important;
+            }
+        </style>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const banner = document.createElement('div');
+                banner.className = 'kenzmal-banner-fixed';
+                banner.innerHTML = `
+                    <div class="logo"><img src="https://kenzmal.ir/wp-content/uploads/2023/07/logokenzfinal.png" alt="لوگو انباردار" /></div>
+                    <div class="center-text">📦 شما در پنل انباردار هستید</div>
+                    <div class="datetime" id="kenzmal-time">در حال بارگذاری...</div>
+                `;
+                document.body.appendChild(banner);
+
+                function updateTime() {
+                    const now = new Date();
+                    const date = now.toLocaleDateString('fa-IR');
+                    const time = now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    document.getElementById('kenzmal-time').textContent = `${date} - ${time}`;
+                }
+
+                updateTime();
+                setInterval(updateTime, 1000);
+            });
+        </script>
+        <?php
+    }
+});
+add_action('admin_head', function () {
+    $user = wp_get_current_user();
+    $screen = get_current_screen();
+
+    if (in_array($user->user_login, ['anbardar', 'anbardar2']) && $screen && $screen->id === 'edit-shop_order') {
+        echo '<style>
+            #posts-filter > div.tablenav.bottom > div.woocommerce-BlankState > div > a {
+                display: none !important;
+            }
+        </style>';
+    }
+});
+add_action('admin_head', function () {
+    $user = wp_get_current_user();
+    if (in_array($user->user_login, ['anbardar', 'anbardar2'])) {
+        echo '<style>
+            #wpbody-content > div.wrap > h1 {
+                display: none !important;
+            }
+        </style>';
+    }
+});
+add_action('admin_footer', function () {
+    $user = wp_get_current_user();
+    $screen = get_current_screen();
+
+    if (in_array($user->user_login, ['anbardar', 'anbardar2']) && $screen && $screen->id === 'edit-shop_order') {
+        ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const h1 = document.querySelector('#wpbody-content > div.wrap > h1');
+                if (h1) {
+                    h1.textContent = 'سفارشات 📦';
+                }
+            });
+        </script>
+        <?php
+    }
+});
